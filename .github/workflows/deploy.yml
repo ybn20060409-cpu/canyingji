@@ -14,6 +14,10 @@ jobs:
         with:
           python-version: '3.x'
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install dependencies
         run: pip install markdown pyyaml
 
@@ -21,11 +25,6 @@ jobs:
         run: python build.py
 
       - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v3
-        with:
-          publish-dir: './public'
-          functions-dir: './netlify/functions'
-          production-branch: main
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          netlify-auth-token: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          netlify-site-id: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          npm install -g netlify-cli
+          netlify deploy --prod --dir=public --functions=netlify/functions --auth=${{ secrets.NETLIFY_AUTH_TOKEN }} --site=${{ secrets.NETLIFY_SITE_ID }}
