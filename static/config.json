@@ -1,0 +1,51 @@
+{
+  "site_name": "朝暮集",
+  "subtitle": "思考 · 记录 · 创作",
+  "author": "姚北南",
+  "description": "写深度思考的文字，记录流动的时光。",
+  "avatar_text": "北",
+  "about": {
+    "name": "找到了北",
+    "avatar_emoji": "",
+    "bio": "一个喜欢在深夜写字的人。相信文字有温度，思考有重量。",
+    "long_bio": "我是姚北南，一个习惯用文字与世界对话的人。\n\n这个网站是我思想的延伸——这里记录着我的深度思考、随笔和创作。每一篇文章都是某个时刻的真实表达，不追求流量，只追求真诚。\n\n如果你也喜欢在安静中思考，那你一定会懂这里。欢迎常来坐坐。",
+    "interests": [
+      "深度思考",
+      "文学创作",
+      "哲学",
+      "心理学",
+      "AI与思考"
+    ],
+    "location": "中国香港"
+  },
+  "series": {
+    "深度思考": {
+      "icon": "🌌",
+      "color": "#6c8cff"
+    },
+    "随笔漫谈": {
+      "icon": "📜",
+      "color": "#7c6ff7"
+    },
+    "诗歌": {
+      "icon": "🌸",
+      "color": "#e85d9a"
+    },
+    "技术笔记": {
+      "icon": "🔧",
+      "color": "#4ade80"
+    }
+  },
+  "colors": {
+    "--bg-deepest": "#0a0a14",
+    "--bg-base": "#0f0f1e",
+    "--bg-card": "#161630",
+    "--text-primary": "#e4e4f0",
+    "--text-secondary": "#a0a0c0",
+    "--text-muted": "#6c6c90",
+    "--accent-blue": "#5f7add",
+    "--accent-indigo": "#7c6ff7",
+    "--accent-warm": "#e8a060",
+    "--border-subtle": "#262650"
+  }
+}

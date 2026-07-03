@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>北南集 · 编辑器</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-deepest:#0a0a14;--bg-base:#0f0f1e;--bg-card:#161630;
+  --text-primary:#e4e4f0;--text-secondary:#a0a0c0;--text-muted:#6c6c90;
+  --accent-blue:#6c8cff;--accent-indigo:#7c6ff7;--accent-warm:#e8a060;
+  --border-subtle:#262650;--danger:#e05570;--success:#4ade80;
+  --radius:10px;--radius-sm:6px;--font-mono:'Cascadia Code','Fira Code',Consolas,monospace;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg-deepest);color:var(--text-primary);min-height:100vh}
+.topbar{background:var(--bg-card);border-bottom:1px solid var(--border-subtle);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-logo{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--accent-blue),var(--accent-indigo));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.topbar-sub{font-size:12px;color:var(--text-muted)}
+.btn{padding:8px 16px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:14px;font-weight:500;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:linear-gradient(135deg,var(--accent-blue),var(--accent-indigo));color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-danger:hover{opacity:.85}
+.btn-outline{background:transparent;border:1px solid var(--border-subtle);color:var(--text-primary)}
+.btn-outline:hover{background:var(--bg-card)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border-subtle);background:var(--bg-base);padding:0 24px}
+.tab{padding:12px 20px;cursor:pointer;border:none;background:none;color:var(--text-muted);font-size:14px;border-bottom:2px solid transparent;transition:all .2s}
+.tab:hover{color:var(--text-secondary)}
+.tab.active{color:var(--accent-blue);border-bottom-color:var(--accent-blue)}
+.content{padding:24px;max-width:1400px;margin:0 auto}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.panel-header h2{font-size:20px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border-subtle);font-size:14px}
+th{color:var(--text-muted);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+tr:hover{background:var(--bg-card)}
+.series-badge{padding:2px 8px;border-radius:12px;font-size:12px;display:inline-block}
+.actions{display:flex;gap:6px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:24px;width:90%;max-width:700px;max-height:85vh;overflow-y:auto}
+.modal h3{font-size:18px;margin-bottom:16px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);color:var(--text-primary);font-size:14px;font-family:inherit}
+.form-group textarea{min-height:120px;resize:vertical;font-family:var(--font-mono);font-size:13px;line-height:1.6}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent-blue)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:300;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:var(--radius-sm);font-size:14px;animation:slideIn .3s ease;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast-success{background:#0d3320;border:1px solid #22c55e40;color:var(--success)}
+.toast-error{background:#330d18;border:1px solid #e0557040;color:var(--danger)}
+.toast-info{background:#0d1a33;border:1px solid #6c8cff40;color:var(--accent-blue)}
+@keyframes slideIn{from{transform:translateX(100px);opacity:0}to{transform:translateX(0);opacity:1}}
+.color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+.color-item{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:14px}
+.color-item label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.color-item input[type=color]{width:100%;height:36px;border:none;border-radius:var(--radius-sm);cursor:pointer;background:var(--bg-base);padding:2px}
+.color-item .var-name{font-size:11px;color:var(--text-muted);font-family:var(--font-mono);margin-top:4px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--text-muted);border-top:2px solid var(--accent-blue);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.series-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius);padding:16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.series-info{display:flex;align-items:center;gap:10px}
+.series-emoji{font-size:24px}
+.series-name{font-size:15px;font-weight:500}
+.series-color-dot{width:14px;height:14px;border-radius:50%}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-muted)}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+.empty-state p{font-size:14px}
+.about-form{max-width:700px}
+.deploy-modal .modal{max-width:500px;text-align:center}
+.deploy-modal .spinner{width:32px;height:32px;border-width:3px;margin:20px auto}
+.deploy-link{color:var(--accent-blue);word-break:break-all;font-size:16px;display:block;margin:12px 0}
+@media(max-width:768px){.form-row{grid-template-columns:1fr}.content{padding:16px}.topbar{padding:0 16px}.tabs{padding:0 12px;overflow-x:auto}.tab{padding:10px 14px;font-size:13px;white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+
+<div class="topbar"><div class="topbar-left"><span class="topbar-logo">北南集</span><span class="topbar-sub">· 编辑器</span></div><button class="btn btn-primary" onclick="deploySite()">🚀 发布网站</button></div>
+<div class="tabs" id="tabs">
+<button class="tab active" data-tab="articles">📝 文章管理</button>
+<button class="tab" data-tab="poems">🌸 诗歌管理</button>
+<button class="tab" data-tab="series">📂 合集管理</button>
+<button class="tab" data-tab="about">👤 关于我</button>
+<button class="tab" data-tab="colors">🎨 配色调整</button>
+</div>
+<div class="content" id="tab-content"></div>
+<div class="toast-container" id="toasts"></div>
+
+<div class="modal-overlay" id="form-modal"><div class="modal">
+<h3 id="form-title">新建</h3>
+<form id="article-form" onsubmit="saveArticle(event)">
+<input type="hidden" id="form-slug"><input type="hidden" id="form-type" value="article">
+<div class="form-row"><div class="form-group"><label>标题 *</label><input type="text" id="form-title-input" required></div><div class="form-group"><label>日期</label><input type="date" id="form-date"></div></div>
+<div class="form-row"><div class="form-group"><label>合集</label><select id="form-series"></select></div><div class="form-group"><label>封面渐变</label><select id="form-cover"><option value="gradient-sunset">🌅 Sunset</option><option value="gradient-ocean">🌊 Ocean</option><option value="gradient-forest">🌲 Forest</option><option value="gradient-dusk">🌆 Dusk</option><option value="gradient-aurora">🌌 Aurora</option><option value="gradient-ember">🔥 Ember</option><option value="gradient-mist">🌫️ Mist</option><option value="gradient-void">🕳️ Void</option></select></div></div>
+<div class="form-group"><label>标签（逗号分隔）</label><input type="text" id="form-tags" placeholder="深度思考, 哲学"></div>
+<div class="form-group"><label>摘要</label><textarea id="form-excerpt" rows="2"></textarea></div>
+<div class="form-group"><label>正文（Markdown）</label><textarea id="form-content"></textarea></div>
+<div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeFormModal()">取消</button><button type="submit" class="btn btn-primary">保存</button></div>
+</form>
+</div></div>
+
+<div class="modal-overlay deploy-modal" id="deploy-modal"><div class="modal">
+<h3>🚀 正在发布...</h3><div class="spinner"></div>
+<p id="deploy-status" style="margin-top:12px;font-size:14px;color:var(--text-secondary)">正在构建静态网站...</p>
+<div id="deploy-result" style="display:none;margin-top:16px"><p style="color:var(--success);font-size:16px">✅ 发布成功！</p><a class="deploy-link" id="deploy-link" href="#" target="_blank"></a></div>
+<div class="modal-actions"><button class="btn btn-outline" onclick="document.getElementById('deploy-modal').classList.remove('show')">关闭</button></div>
+</div></div>
+
+<div class="modal-overlay" id="delete-modal"><div class="modal" style="max-width:400px">
+<h3>确认删除</h3><p style="color:var(--text-secondary);font-size:14px" id="delete-msg"></p>
+<div class="modal-actions"><button class="btn btn-outline" onclick="document.getElementById('delete-modal').classList.remove('show')">取消</button><button class="btn btn-danger" id="delete-confirm-btn">删除</button></div>
+</div></div>
+
+<div class="modal-overlay" id="series-modal"><div class="modal" style="max-width:400px">
+<h3>新建合集</h3>
+<form onsubmit="saveSeries(event)">
+<div class="form-group"><label>合集名称 *</label><input type="text" id="series-name" required></div>
+<div class="form-row"><div class="form-group"><label>图标 Emoji</label><input type="text" id="series-icon" placeholder="📂" required></div><div class="form-group"><label>颜色</label><input type="color" id="series-color" value="#6c8cff" style="height:42px;padding:2px"></div></div>
+<div class="modal-actions"><button type="button" class="btn btn-outline" onclick="document.getElementById('series-modal').classList.remove('show')">取消</button><button type="submit" class="btn btn-primary">保存</button></div>
+</form>
+</div></div>
+
+<script>
+const API='/api';
+let config={},currentTab='articles';
+
+async function apiCall(method,path,body){
+  const opts={method,headers:{'Content-Type':'application/json'}};
+  if(body)opts.body=JSON.stringify(body);
+  const r=await fetch(API+path,opts);
+  const data=await r.json();
+  if(!r.ok)throw new Error(data.error||r.statusText);
+  return data;
+}
+
+function toast(msg,type='success'){
+  const c=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className='toast toast-'+type;
+  t.innerHTML=msg;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transition='opacity .3s';setTimeout(()=>t.remove(),300)},3000);
+}
+
+async function loadConfig(){config=await apiCall('GET','/config');}
+
+// Tab switching
+document.getElementById('tabs').addEventListener('click',e=>{
+  if(e.target.dataset.tab){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    e.target.classList.add('active');
+    currentTab=e.target.dataset.tab;
+    switchTab(currentTab);
+  }
+});
+
+function switchTab(tab){
+  currentTab=tab;
+  const ct=document.getElementById('tab-content');
+  switch(tab){
+    case 'articles':renderWorks('article');break;
+    case 'poems':renderWorks('poem');break;
+    case 'series':renderSeries();break;
+    case 'about':renderAbout();break;
+    case 'colors':renderColors();break;
+  }
+}
+
+// ── Works (Articles/Poems) ──
+async function renderWorks(type){
+  const label=type==='article'?'文章':'诗歌';
+  const ep=type==='article'?'articles':'poems';
+  const ct=document.getElementById('tab-content');
+  ct.innerHTML='<div class="panel-header"><h2>'+label+'管理</h2><button class="btn btn-primary" onclick="openFormModal(\''+type+'\',null)">＋ 新建'+label+'</button></div><table><thead><tr><th>标题</th><th>合集</th><th>日期</th><th>操作</th></tr></thead><tbody id="works-tbody"><tr><td colspan="4" style="text-align:center;padding:40px"><div class="spinner"></div></td></tr></tbody></table>';
+
+  try{
+    const works=await apiCall('GET','/'+ep);
+    const tbody=document.getElementById('works-tbody');
+    if(!works.length){tbody.innerHTML='<tr><td colspan="4"><div class="empty-state"><div class="icon">'+ (type==='article'?'📝':'🌸')+'</div><p>暂无'+label+'</p></div></td></tr>';return;}
+
+    tbody.innerHTML=works.map(w=>{
+      const series=config.series||{};
+      const si=series[w.series]||{};
+      return '<tr><td><strong>'+escHtml(w.title)+'</strong></td><td><span class="series-badge" style="background:'+(si.color||'#444')+'20;color:'+(si.color||'#888')+'">'+(si.icon||'')+' '+escHtml(w.series||'')+'</span></td><td>'+escHtml(w.date||'')+'</td><td class="actions"><button class="btn btn-outline btn-sm" onclick="openFormModal(\''+type+'\',\''+escAttr(w.slug)+'\')">编辑</button><button class="btn btn-danger btn-sm" onclick="confirmDelete(\''+type+'\',\''+escAttr(w.slug)+'\',\''+escAttr(w.title)+'\')">删除</button></td></tr>';
+    }).join('');
+  }catch(e){toast('加载失败: '+e.message,'error');}
+}
+
+// ── Form Modal ──
+async function openFormModal(type,slug){
+  document.getElementById('form-type').value=type;
+  document.getElementById('form-slug').value=slug||'';
+  document.getElementById('form-title').textContent=slug?'编辑':'新建';
+  document.getElementById('form-title-input').value='';
+  document.getElementById('form-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('form-tags').value='';
+  document.getElementById('form-excerpt').value='';
+  document.getElementById('form-content').value='';
+  document.getElementById('form-cover').value='gradient-sunset';
+
+  // Populate series dropdown
+  const sel=document.getElementById('form-series');
+  sel.innerHTML='<option value="">无合集</option>';
+  const series=config.series||{};
+  Object.keys(series).forEach(s=>{
+    sel.innerHTML+='<option value="'+escAttr(s)+'">'+series[s].icon+' '+escHtml(s)+'</option>';
+  });
+
+  if(slug){
+    const ep=type==='article'?'articles':'poems';
+    try{
+      const w=await apiCall('GET','/'+ep+'/'+slug);
+      document.getElementById('form-title-input').value=w.title||'';
+      document.getElementById('form-date').value=w.date||'';
+      document.getElementById('form-tags').value=(w.tags||[]).join(', ');
+      document.getElementById('form-excerpt').value=w.excerpt||'';
+      document.getElementById('form-content').value=w.body||'';
+      document.getElementById('form-cover').value=w.cover||'gradient-sunset';
+      if(w.series)document.getElementById('form-series').value=w.series;
+    }catch(e){toast('加载内容失败: '+e.message,'error');return;}
+  }
+
+  document.getElementById('form-modal').classList.add('show');
+}
+
+function closeFormModal(){document.getElementById('form-modal').classList.remove('show');}
+
+async function saveArticle(e){
+  e.preventDefault();
+  const type=document.getElementById('form-type').value;
+  const slug=document.getElementById('form-slug').value;
+  const ep=type==='article'?'articles':'poems';
+  const payload={
+    title:document.getElementById('form-title-input').value,
+    date:document.getElementById('form-date').value,
+    series:document.getElementById('form-series').value,
+    tags:document.getElementById('form-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    cover:document.getElementById('form-cover').value,
+    excerpt:document.getElementById('form-excerpt').value,
+    content:document.getElementById('form-content').value
+  };
+
+  try{
+    if(slug){await apiCall('PUT','/'+ep+'/'+slug,payload);toast('已更新 ✓');}
+    else{await apiCall('POST','/'+ep,payload);toast('已创建 ✓');}
+    closeFormModal();
+    renderWorks(type);
+  }catch(e){toast('保存失败: '+e.message,'error');}
+}
+
+// ── Delete ──
+function confirmDelete(type,slug,title){
+  document.getElementById('delete-msg').textContent='确定要删除 "'+title+'" 吗？此操作不可撤销。';
+  document.getElementById('delete-confirm-btn').onclick=()=>doDelete(type,slug);
+  document.getElementById('delete-modal').classList.add('show');
+}
+
+async function doDelete(type,slug){
+  const ep=type==='article'?'articles':'poems';
+  try{
+    await apiCall('DELETE','/'+ep+'/'+slug);
+    toast('已删除 ✓');
+    document.getElementById('delete-modal').classList.remove('show');
+    renderWorks(type);
+  }catch(e){toast('删除失败: '+e.message,'error');}
+}
+
+// ── Series Tab ──
+function renderSeries(){
+  const ct=document.getElementById('tab-content');
+  const series=config.series||{};
+  let html='<div class="panel-header"><h2>合集管理</h2><button class="btn btn-primary" onclick="openSeriesModal()">＋ 新建合集</button></div>';
+  if(!Object.keys(series).length){html+='<div class="empty-state"><div class="icon">📂</div><p>暂无合集</p></div>';}
+  else{
+    Object.keys(series).forEach(name=>{
+      const s=series[name];
+      html+='<div class="series-card"><div class="series-info"><span class="series-emoji">'+s.icon+'</span><span class="series-name">'+escHtml(name)+'</span><span class="series-color-dot" style="background:'+s.color+'"></span></div><button class="btn btn-danger btn-sm" onclick="deleteSeries(\''+escAttr(name)+'\')">删除</button></div>';
+    });
+  }
+  ct.innerHTML=html;
+}
+
+function openSeriesModal(){
+  document.getElementById('series-name').value='';
+  document.getElementById('series-icon').value='📂';
+  document.getElementById('series-color').value='#6c8cff';
+  document.getElementById('series-modal').classList.add('show');
+}
+
+async function saveSeries(e){
+  e.preventDefault();
+  const name=document.getElementById('series-name').value.trim();
+  const icon=document.getElementById('series-icon').value.trim();
+  const color=document.getElementById('series-color').value;
+  if(!name)return;
+  const s2={...config.series};
+  s2[name]={icon:icon||'📂',color};
+  try{
+    await apiCall('PUT','/config',{...config,series:s2});
+    config.series=s2;
+    toast('合集已保存 ✓');
+    document.getElementById('series-modal').classList.remove('show');
+    renderSeries();
+  }catch(e){toast('保存失败: '+e.message,'error');}
+}
+
+async function deleteSeries(name){
+  if(!confirm('确定删除合集 "'+name+'"？'))return;
+  const s2={...config.series};
+  delete s2[name];
+  try{
+    await apiCall('PUT','/config',{...config,series:s2});
+    config.series=s2;
+    toast('合集已删除 ✓');
+    renderSeries();
+  }catch(e){toast('删除失败: '+e.message,'error');}
+}
+
+// ── About Tab ──
+function renderAbout(){
+  const ct=document.getElementById('tab-content');
+  const a=config.about||{};
+  ct.innerHTML='<div class="panel-header"><h2>关于我</h2></div><div class="about-form"><div class="form-row"><div class="form-group"><label>名称</label><input type="text" id="about-name" value="'+escAttr(a.name||'')+'"></div><div class="form-group"><label>头像 Emoji</label><input type="text" id="about-emoji" value="'+escAttr(a.avatar_emoji||'')+'"></div></div><div class="form-group"><label>简介</label><input type="text" id="about-bio" value="'+escAttr(a.bio||'')+'"></div><div class="form-group"><label>详细介绍</label><textarea id="about-long" rows="5">'+escHtml(a.long_bio||'')+'</textarea></div><div class="form-group"><label>关注领域（逗号分隔）</label><input type="text" id="about-interests" value="'+escAttr((a.interests||[]).join(', '))+'"></div><div class="form-group"><label>所在地</label><input type="text" id="about-location" value="'+escAttr(a.location||'')+'"></div><h3 style="margin:20px 0 12px;font-size:16px">网站设置</h3><div class="form-row"><div class="form-group"><label>网站名称</label><input type="text" id="site-name" value="'+escAttr(config.site_name||'')+'"></div><div class="form-group"><label>副标题</label><input type="text" id="site-subtitle" value="'+escAttr(config.subtitle||'')+'"></div></div><div class="form-group"><label>描述</label><input type="text" id="site-desc" value="'+escAttr(config.description||'')+'"></div><button class="btn btn-primary" onclick="saveAbout()" style="margin-top:16px">💾 保存设置</button></div>';
+}
+
+async function saveAbout(){
+  const about={
+    name:document.getElementById('about-name').value,
+    avatar_emoji:document.getElementById('about-emoji').value,
+    bio:document.getElementById('about-bio').value,
+    long_bio:document.getElementById('about-long').value,
+    interests:document.getElementById('about-interests').value.split(',').map(t=>t.trim()).filter(Boolean),
+    location:document.getElementById('about-location').value
+  };
+  const updated={...config,
+    site_name:document.getElementById('site-name').value,
+    subtitle:document.getElementById('site-subtitle').value,
+    description:document.getElementById('site-desc').value,
+    about
+  };
+  try{
+    await apiCall('PUT','/config',updated);
+    config=updated;
+    toast('设置已保存 ✓');
+  }catch(e){toast('保存失败: '+e.message,'error');}
+}
+
+// ── Colors Tab ──
+const COLOR_VARS=[
+  ['--bg-deepest','背景最深'],['--bg-base','背景基础'],['--bg-card','卡片背景'],
+  ['--text-primary','文字主要'],['--text-secondary','文字次要'],['--text-muted','文字淡化'],
+  ['--accent-blue','强调蓝'],['--accent-indigo','强调靛蓝'],['--accent-warm','强调暖色'],
+  ['--border-subtle','边框']
+];
+
+function renderColors(){
+  const ct=document.getElementById('tab-content');
+  const rs=getComputedStyle(document.documentElement);
+  let html='<div class="panel-header"><h2>配色调整</h2><button class="btn btn-primary" onclick="saveColors()">💾 保存配色</button></div><div class="color-grid">';
+  COLOR_VARS.forEach(([v,label])=>{
+    const val=rs.getPropertyValue(v).trim();
+    html+='<div class="color-item"><label>'+label+'</label><input type="color" id="color-'+v+'" value="'+val+'" onchange="previewColor(\''+v+'\',this.value)"><div class="var-name">'+v+'</div></div>';
+  });
+  html+='</div>';
+  ct.innerHTML=html;
+}
+
+function previewColor(variable,value){
+  document.documentElement.style.setProperty(variable,value);
+}
+
+async function saveColors(){
+  const colors={};
+  COLOR_VARS.forEach(([v])=>{
+    colors[v]=document.getElementById('color-'+v).value;
+  });
+  const updated={...config,colors};
+  try{
+    await apiCall('PUT','/config',updated);
+    config=updated;
+    toast('配色已保存 ✓');
+  }catch(e){toast('保存失败: '+e.message,'error');}
+}
+
+// ── Deploy ──
+async function deploySite(){
+  document.getElementById('deploy-modal').classList.add('show');
+  document.getElementById('deploy-status').textContent='正在构建静态网站...';
+  document.getElementById('deploy-result').style.display='none';
+  try{
+    const r=await apiCall('POST','/deploy');
+    document.getElementById('deploy-status').textContent='构建完成！';
+    document.getElementById('deploy-result').style.display='block';
+    if(r.url){document.getElementById('deploy-link').href=r.url;document.getElementById('deploy-link').textContent=r.url;}
+    else{document.getElementById('deploy-link').textContent='部署完成 (本地构建)';}
+  }catch(e){
+    document.getElementById('deploy-status').textContent='发布失败: '+e.message;
+    document.getElementById('deploy-status').style.color='var(--danger)';
+    toast('发布失败: '+e.message,'error');
+  }
+}
+
+// ── Helpers ──
+function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ── Init ──
+(async function init(){
+  await loadConfig();
+  // Apply saved colors if any
+  if(config.colors){Object.entries(config.colors).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));}
+  switchTab('articles');
+})();
+
+</script>
+</body>
+</html>

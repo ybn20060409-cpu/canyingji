@@ -1,0 +1,68 @@
+/* ═══════════════════════════════════════════════════════
+   残影集 — Cover Gradients
+   Each cover creates a unique atmospheric gradient
+   with a subtle noise texture overlay.
+   Blue Hour (蓝调时刻) — deep twilight blue gradients.
+   Pure, saturated blue-violet tones.
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Base Cover ────────────────────────────────────── */
+.cover,
+.card-cover {
+  position: relative;
+  overflow: hidden;
+}
+
+.cover::after,
+.card-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+  opacity: 0.6;
+}
+
+/* ── Gradient Definitions ──────────────────────────── */
+
+/* Sunset: twilight indigo-to-blue */
+.cover-sunset { background: linear-gradient(135deg, #2a3568 0%, #3d5090 35%, #1a2a50 70%, #0c1428 100%); }
+.card-cover.cover-sunset { background: linear-gradient(135deg, #2a3568 0%, #3d5090 40%, #1a2a50 80%, #111a33 100%); }
+
+/* Ocean: deep blue hour sea */
+.cover-ocean { background: linear-gradient(135deg, #1a3058 0%, #1a4870 40%, #0d3050 70%, #0c1428 100%); }
+.card-cover.cover-ocean { background: linear-gradient(135deg, #1a3058 0%, #1a4870 45%, #0d3050 80%, #111a33 100%); }
+
+/* Forest: twilight teal-blue */
+.cover-forest { background: linear-gradient(135deg, #0d2a3d 0%, #0d4860 40%, #06303d 70%, #0c1428 100%); }
+.card-cover.cover-forest { background: linear-gradient(135deg, #0d2a3d 0%, #0d4860 45%, #06303d 80%, #111a33 100%); }
+
+/* Dusk: deep indigo-to-violet */
+.cover-dusk { background: linear-gradient(135deg, #1a2a50 0%, #2d3d70 35%, #3d3870 65%, #111a33 100%); }
+.card-cover.cover-dusk { background: linear-gradient(135deg, #1a2a50 0%, #2d3d70 40%, #3d3870 75%, #111a33 100%); }
+
+/* Aurora: blue-indigo-violet sweep */
+.cover-aurora { background: linear-gradient(135deg, #1a3058 0%, #2d4a78 30%, #3d3070 60%, #1a3058 100%); }
+.card-cover.cover-aurora { background: linear-gradient(135deg, #1a3058 0%, #2d4a78 35%, #3d3070 65%, #1a3058 100%); }
+
+/* Ember: deep pink-violet (warm accent) */
+.cover-ember { background: linear-gradient(135deg, #2d1a35 0%, #4a1a50 30%, #1a0d28 60%, #0c1428 100%); }
+.card-cover.cover-ember { background: linear-gradient(135deg, #2d1a35 0%, #4a1a50 35%, #1a0d28 65%, #111a33 100%); }
+
+/* Mist: muted twilight blue */
+.cover-mist { background: linear-gradient(135deg, #161a2a 0%, #1e2840 35%, #141828 65%, #0c1428 100%); }
+.card-cover.cover-mist { background: linear-gradient(135deg, #161a2a 0%, #1e2840 40%, #141828 75%, #111a33 100%); }
+
+/* Void: near-black deep blue */
+.cover-void { background: linear-gradient(135deg, #060b18 0%, #0e1428 40%, #080d18 70%, #0c1428 100%); }
+.card-cover.cover-void { background: linear-gradient(135deg, #060b18 0%, #0e1428 45%, #080d18 75%, #111a33 100%); }
+
+/* Default fallback: subtle twilight blue */
+.cover-gradient-default { background: linear-gradient(135deg, #101a30 0%, #162040 50%, #0c1428 100%); }
+.card-cover.cover-gradient-default { background: linear-gradient(135deg, #101a30 0%, #162040 50%, #0c1428 100%); }
+
+/* Autumn: violet-purple (warmer accent) */
+.cover-autumn { background: linear-gradient(135deg, #2a1d40 0%, #402a55 35%, #1d1a35 70%, #0c1428 100%); }
+.card-cover.cover-autumn { background: linear-gradient(135deg, #2a1d40 0%, #402a55 40%, #1d1a35 80%, #111a33 100%); }

@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>残影集 - 编辑器</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#0b0e1a;color:#d0d4e8;min-height:100vh}
+a{color:#5588ee;text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Header */
+.header{background:#13172a;border-bottom:1px solid rgba(85,136,238,0.12);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.header h1{font-size:18px;font-weight:600;color:#e0e4f8;letter-spacing:0.5px}
+.header .user-info{display:flex;align-items:center;gap:12px}
+.header .logged-in-text{font-size:13px;color:#8899cc}
+.header button{padding:8px 16px;border-radius:6px;border:1px solid #5588ee;background:transparent;color:#5588ee;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s}
+.header button:hover{background:rgba(85,136,238,0.08)}
+.header button.primary{background:#5588ee;color:#fff;border-color:#5588ee}
+.header button.primary:hover{background:#4477dd}
+
+/* Layout */
+.main{max-width:1100px;margin:0 auto;padding:24px}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:2px solid rgba(85,136,238,0.12);margin-bottom:24px}
+.tab-btn{padding:10px 20px;background:transparent;border:none;color:#667799;cursor:pointer;font-size:14px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab-btn:hover{color:#99aacc}
+.tab-btn.active{color:#5588ee;border-bottom-color:#5588ee}
+
+/* Panels */
+.panel{display:none}
+.panel.active{display:block}
+
+/* Login */
+.login-form{max-width:480px;margin:80px auto;padding:32px;background:#13172a;border-radius:12px;border:1px solid rgba(85,136,238,0.12)}
+.login-form h2{font-size:20px;margin-bottom:8px;color:#e0e4f8}
+.login-form p{font-size:13px;color:#667799;margin-bottom:20px}
+.login-form label{display:block;font-size:13px;color:#8899cc;margin-bottom:6px}
+.login-form input{width:100%;padding:10px 14px;background:#0b0e1a;border:1px solid rgba(85,136,238,0.2);border-radius:6px;color:#d0d4e8;font-size:14px;outline:none;transition:border-color .15s}
+.login-form input:focus{border-color:#5588ee}
+.login-form .error{color:#e87890;font-size:12px;margin-top:8px;display:none}
+.login-form button{margin-top:16px;width:100%;padding:11px;background:#5588ee;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer}
+.login-form button:hover{background:#4477dd}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.toolbar button{padding:8px 18px;border-radius:6px;border:1px solid rgba(85,136,238,0.25);background:transparent;color:#5588ee;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s}
+.toolbar button:hover{background:rgba(85,136,238,0.08)}
+.toolbar button.primary{background:#5588ee;color:#fff;border-color:#5588ee}
+.toolbar button.primary:hover{background:#4477dd}
+.toolbar button.danger{background:#e87890;color:#fff;border-color:#e87890}
+.toolbar button.danger:hover{background:#d46078}
+.toolbar .search{display:flex;align-items:center;gap:8px}
+.toolbar input[type="text"]{padding:8px 14px;background:#0b0e1a;border:1px solid rgba(85,136,238,0.2);border-radius:6px;color:#d0d4e8;font-size:13px;outline:none;width:220px}
+.toolbar input[type="text"]:focus{border-color:#5588ee}
+
+/* List */
+.item-list{display:flex;flex-direction:column;gap:2px}
+.item-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#13172a;border-radius:6px;transition:background .15s}
+.item-row:hover{background:#1a1f3a}
+.item-row .name{font-size:14px;font-weight:500;color:#d0d4e8;cursor:pointer}
+.item-row .name:hover{color:#5588ee}
+.item-row .actions{display:flex;gap:8px;flex-shrink:0}
+.item-row .actions button{padding:5px 12px;border-radius:4px;border:1px solid rgba(85,136,238,0.2);background:transparent;color:#8899cc;cursor:pointer;font-size:12px;transition:all .15s}
+.item-row .actions button:hover{background:rgba(85,136,238,0.08);color:#5588ee}
+.item-row .actions button.danger:hover{background:rgba(232,120,144,0.12);color:#e87890;border-color:rgba(232,120,144,0.3)}
+.empty{text-align:center;padding:48px 24px;color:#667799;font-size:14px}
+
+/* Editor modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px}
+.modal{background:#13172a;border-radius:12px;border:1px solid rgba(85,136,238,0.12);width:100%;max-width:800px;max-height:90vh;display:flex;flex-direction:column}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(85,136,238,0.12)}
+.modal-header h2{font-size:16px;color:#e0e4f8}
+.modal-header button{background:transparent;border:none;color:#667799;cursor:pointer;font-size:20px;line-height:1;padding:0 4px}
+.modal-header button:hover{color:#d0d4e8}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.modal-body label{display:block;font-size:13px;color:#8899cc;margin-bottom:6px;margin-top:12px}
+.modal-body label:first-child{margin-top:0}
+.modal-body input[type="text"]{width:100%;padding:10px 14px;background:#0b0e1a;border:1px solid rgba(85,136,238,0.2);border-radius:6px;color:#d0d4e8;font-size:14px;outline:none}
+.modal-body input[type="text"]:focus{border-color:#5588ee}
+.modal-body textarea{width:100%;padding:10px 14px;background:#0b0e1a;border:1px solid rgba(85,136,238,0.2);border-radius:6px;color:#d0d4e8;font-size:14px;outline:none;font-family:'SF Mono','Cascadia Code',Consolas,monospace;resize:vertical;min-height:300px;line-height:1.6}
+.modal-body textarea:focus{border-color:#5588ee}
+.modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid rgba(85,136,238,0.12)}
+.modal-footer button{padding:8px 20px;border-radius:6px;border:1px solid rgba(85,136,238,0.2);background:transparent;color:#8899cc;cursor:pointer;font-size:13px;transition:all .15s}
+.modal-footer button:hover{background:rgba(85,136,238,0.08)}
+.modal-footer button.primary{background:#5588ee;border-color:#5588ee;color:#fff}
+.modal-footer button.primary:hover{background:#4477dd}
+.modal-footer button.danger{background:#e87890;border-color:#e87890;color:#fff}
+.modal-footer button.danger:hover{background:#d46078}
+
+/* Config editor */
+.config-section{margin-bottom:20px}
+.config-section h3{font-size:15px;color:#e0e4f8;margin-bottom:8px}
+.config-section textarea{width:100%;min-height:200px}
+
+/* Toast */
+.toast-container{position:fixed;top:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;animation:slideIn .25s ease-out;max-width:380px}
+.toast.success{background:#1a3a2a;color:#4ade80;border:1px solid rgba(74,222,128,0.2)}
+.toast.error{background:#3a1a2a;color:#e87890;border:1px solid rgba(232,120,144,0.2)}
+.toast.info{background:#1a2a3a;color:#5588ee;border:1px solid rgba(85,136,238,0.2)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* Spinner */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(85,136,238,0.2);border-top-color:#5588ee;border-radius:50%;animation:spin .6s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>残影集 · 编辑器</h1>
+  <div class="user-info">
+    <span class="logged-in-text" id="userLabel">未登录</span>
+    <button id="logoutBtn" style="display:none" onclick="doLogout()">登出</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Login -->
+  <div id="loginPanel" class="panel active">
+    <div class="login-form">
+      <h2>登录</h2>
+      <p>请输入 GitHub Personal Access Token 以编辑仓库内容。</p>
+      <label>Token</label>
+      <input type="password" id="tokenInput" placeholder="ghp_...">
+      <div class="error" id="loginError"></div>
+      <button onclick="doLogin()">验证并登录</button>
+    </div>
+  </div>
+
+  <!-- Editor (hidden until login) -->
+  <div id="editorPanel" class="panel">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="articles">文章</button>
+      <button class="tab-btn" data-tab="poems">诗</button>
+      <button class="tab-btn" data-tab="series">系列</button>
+      <button class="tab-btn" data-tab="about">关于</button>
+    </div>
+
+    <!-- Articles -->
+    <div id="articlesPanel" class="panel active">
+      <div class="toolbar">
+        <div>
+          <button class="primary" onclick="openArticleCreate()">+ 新建文章</button>
+          <button onclick="refreshArticles()" style="margin-left:8px">刷新</button>
+        </div>
+        <div class="search">
+          <input type="text" id="articleSearch" placeholder="搜索文章..." oninput="renderArticles()">
+        </div>
+      </div>
+      <div class="item-list" id="articleList"></div>
+    </div>
+
+    <!-- Poems -->
+    <div id="poemsPanel" class="panel">
+      <div class="toolbar">
+        <div>
+          <button class="primary" onclick="openPoemCreate()">+ 新建诗</button>
+          <button onclick="refreshPoems()" style="margin-left:8px">刷新</button>
+        </div>
+        <div class="search">
+          <input type="text" id="poemSearch" placeholder="搜索诗..." oninput="renderPoems()">
+        </div>
+      </div>
+      <div class="item-list" id="poemList"></div>
+    </div>
+
+    <!-- Series -->
+    <div id="seriesPanel" class="panel">
+      <div class="config-section">
+        <div class="toolbar">
+          <h3 style="margin-bottom:0">系列管理</h3>
+          <button class="primary" onclick="saveSeries()">保存系列</button>
+        </div>
+        <textarea id="seriesEditor" placeholder="编辑系列 JSON..."></textarea>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div id="aboutPanel" class="panel">
+      <div class="config-section">
+        <div class="toolbar">
+          <h3 style="margin-bottom:0">关于页面</h3>
+          <button class="primary" onclick="saveAbout()">保存关于</button>
+        </div>
+        <textarea id="aboutEditor" placeholder="编辑关于内容..."></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">编辑</h2>
+      <button onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ── Encoding helpers ──
+function db64(s){ return new TextDecoder().decode(Uint8Array.from(atob(s),c=>c.charCodeAt(0))); }
+function b64e(s){ var bs=[];for(var i=0;i<s.length;i++){var c=s.charCodeAt(i);if(c<128)bs.push(c);else if(c<2048){bs.push(192|c>>6);bs.push(128|c&63);}else{bs.push(224|c>>12);bs.push(128|c>>6&63);bs.push(128|c&63);}}return btoa(String.fromCharCode.apply(null,bs)); }
+
+// ── State ──
+var TOKEN = '';
+var LOGGED_IN = false;
+var CONFIG = null;
+var ARTICLES = [];
+var POEMS = [];
+
+var API = 'https://api.github.com/repos/ybn20060409-cpu/canyingji';
+
+// ── Toast ──
+function toast(msg, type){
+  type = type || 'info';
+  var c = document.getElementById('toastContainer');
+  var t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(function(){ t.remove(); }, 3000);
+}
+
+// ── API helpers ──
+function apiHeaders(){
+  return {
+    'Authorization': 'Bearer ' + TOKEN,
+    'Accept': 'application/vnd.github.v3+json'
+  };
+}
+
+async function ghGet(path){
+  var r = await fetch(API + '/' + path, { headers: apiHeaders() });
+  if(!r.ok) throw new Error('请求失败: ' + r.status + ' ' + (await r.text()).slice(0,200));
+  return r.json();
+}
+
+async function ghGetContent(path){
+  var r = await fetch(API + '/contents/' + path, { headers: apiHeaders() });
+  if(!r.ok){
+    if(r.status === 404) return null;
+    throw new Error('请求失败: ' + r.status);
+  }
+  return r.json();
+}
+
+async function ghPut(path, content, sha, msg){
+  var body = {
+    message: msg || ('更新 ' + path),
+    content: b64e(content),
+    branch: 'main'
+  };
+  if(sha) body.sha = sha;
+  var r = await fetch(API + '/contents/' + path, {
+    method: 'PUT',
+    headers: Object.assign({}, apiHeaders(), { 'Content-Type': 'application/json' }),
+    body: JSON.stringify(body)
+  });
+  if(!r.ok) throw new Error('保存失败: ' + r.status + ' ' + (await r.text()).slice(0,200));
+  return r.json();
+}
+
+async function ghDelete(path, sha, msg){
+  var r = await fetch(API + '/contents/' + path, {
+    method: 'DELETE',
+    headers: Object.assign({}, apiHeaders(), { 'Content-Type': 'application/json' }),
+    body: JSON.stringify({
+      message: msg || ('删除 ' + path),
+      sha: sha,
+      branch: 'main'
+    })
+  });
+  if(!r.ok) throw new Error('删除失败: ' + r.status + ' ' + (await r.text()).slice(0,200));
+  return r.json();
+}
+
+async function ghListDir(path){
+  var r = await fetch(API + '/contents/' + path, { headers: apiHeaders() });
+  if(!r.ok) throw new Error('列出失败: ' + r.status);
+  return r.json();
+}
+
+// ── Login ──
+async function doLogin(){
+  var inp = document.getElementById('tokenInput');
+  var err = document.getElementById('loginError');
+  TOKEN = inp.value.trim();
+  if(!TOKEN){ err.style.display='block'; err.textContent='请输入 Token'; return; }
+  try{
+    var data = await ghGetContent('config.json');
+    if(!data){ err.style.display='block'; err.textContent='无法访问 config.json，请检查 Token 权限'; return; }
+    var txt = db64(data.content);
+    CONFIG = JSON.parse(txt);
+    localStorage.setItem('beitoken', TOKEN);
+    LOGGED_IN = true;
+    document.getElementById('loginPanel').classList.remove('active');
+    document.getElementById('editorPanel').classList.add('active');
+    document.getElementById('userLabel').textContent = '已登录';
+    document.getElementById('logoutBtn').style.display = 'inline-block';
+    err.style.display = 'none';
+    toast('登录成功', 'success');
+    initTabs();
+    await refreshArticles();
+    await refreshPoems();
+  }catch(e){
+    err.style.display='block';
+    err.textContent = '验证失败: ' + e.message;
+    LOGGED_IN = false;
+  }
+}
+
+function doLogout(){
+  TOKEN = '';
+  LOGGED_IN = false;
+  localStorage.removeItem('beitoken');
+  CONFIG = null; ARTICLES = []; POEMS = [];
+  document.getElementById('loginPanel').classList.add('active');
+  document.getElementById('editorPanel').classList.remove('active');
+  document.getElementById('userLabel').textContent = '未登录';
+  document.getElementById('logoutBtn').style.display = 'none';
+  toast('已登出');
+}
+
+// ── Tabs ──
+function initTabs(){
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var tab = this.dataset.tab;
+      document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      this.classList.add('active');
+      document.querySelectorAll('#editorPanel .panel').forEach(function(p){ p.classList.remove('active'); });
+      document.getElementById(tab + 'Panel').classList.add('active');
+      if(tab === 'series') loadSeriesEditor();
+      if(tab === 'about') loadAboutEditor();
+    });
+  });
+}
+
+// ── Articles ──
+async function refreshArticles(){
+  try{
+    var items = await ghListDir('article');
+    ARTICLES = [];
+    for(var i=0;i<items.length;i++){
+      if(items[i].type === 'file' && items[i].name.endsWith('.html')){
+        ARTICLES.push({ name: items[i].name, path: items[i].path, sha: items[i].sha });
+      }
+    }
+    ARTICLES.sort(function(a,b){ return a.name.localeCompare(b.name,'zh'); });
+    renderArticles();
+  }catch(e){
+    toast('加载文章失败: ' + e.message, 'error');
+  }
+}
+
+function renderArticles(){
+  var q = (document.getElementById('articleSearch').value || '').toLowerCase();
+  var list = document.getElementById('articleList');
+  var filtered = ARTICLES.filter(function(a){ return !q || a.name.toLowerCase().includes(q); });
+  if(!filtered.length){
+    list.innerHTML = '<div class="empty">暂无文章</div>';
+    return;
+  }
+  var html = '';
+  for(var i=0;i<filtered.length;i++){
+    var a = filtered[i];
+    var displayName = a.name.replace(/\.html$/,'');
+    html += '<div class="item-row">' +
+      '<span class="name" onclick="openArticleEdit(\'' + esc(a.path) + '\',\'' + esc(a.sha) + '\')">' + escHtml(displayName) + '</span>' +
+      '<div class="actions">' +
+        '<button onclick="openArticleEdit(\'' + esc(a.path) + '\',\'' + esc(a.sha) + '\')">编辑</button>' +
+        '<button class="danger" onclick="deleteArticle(\'' + esc(a.path) + '\',\'' + esc(a.sha) + '\',\'' + escHtml(displayName) + '\')">删除</button>' +
+      '</div>' +
+    '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function openArticleCreate(){
+  showModal('新建文章', '<label>文件名（不含 .html）</label><input type="text" id="modalArticleName" placeholder="例如：春日随笔">' +
+    '<label>内容（HTML）</label><textarea id="modalArticleContent" placeholder="输入文章内容..."></textarea>',
+    '<button onclick="closeModal()">取消</button><button class="primary" onclick="saveArticleCreate()">创建</button>');
+}
+
+async function saveArticleCreate(){
+  var name = document.getElementById('modalArticleName').value.trim();
+  var content = document.getElementById('modalArticleContent').value;
+  if(!name){ toast('请输入文件名', 'error'); return; }
+  var filename = name + '.html';
+  try{
+    await ghPut('article/' + filename, content, null, '创建文章 ' + filename);
+    closeModal();
+    toast('文章已创建', 'success');
+    await refreshArticles();
+  }catch(e){
+    toast('创建失败: ' + e.message, 'error');
+  }
+}
+
+async function openArticleEdit(path, sha){
+  try{
+    var data = await ghGetContent(path);
+    var content = db64(data.content);
+    showModal('编辑: ' + path.replace('article/','').replace('.html',''),
+      '<label>文件名</label><input type="text" id="modalArticleName" value="' + escHtml(path.replace('article/','').replace('.html','')) + '">' +
+      '<label>内容（HTML）</label><textarea id="modalArticleContent">' + escHtml(content) + '</textarea>',
+      '<button onclick="closeModal()">取消</button><button class="primary" onclick="saveArticleEdit(\'' + esc(path) + '\',\'' + esc(data.sha) + '\')">保存</button>');
+  }catch(e){
+    toast('加载失败: ' + e.message, 'error');
+  }
+}
+
+async function saveArticleEdit(oldPath, oldSha){
+  var newName = document.getElementById('modalArticleName').value.trim();
+  var content = document.getElementById('modalArticleContent').value;
+  if(!newName){ toast('请输入文件名', 'error'); return; }
+  var newFilename = newName + '.html';
+  var newPath = 'article/' + newFilename;
+  try{
+    if(oldPath !== newPath){
+      await ghPut(newPath, content, null, '创建文章 ' + newFilename + ' (重命名)');
+      await ghDelete(oldPath, oldSha, '删除旧文件 ' + oldPath);
+    }else{
+      await ghPut(oldPath, content, oldSha, '更新文章 ' + oldPath);
+    }
+    closeModal();
+    toast('文章已保存', 'success');
+    await refreshArticles();
+  }catch(e){
+    toast('保存失败: ' + e.message, 'error');
+  }
+}
+
+async function deleteArticle(path, sha, displayName){
+  if(!confirm('确定删除「' + displayName + '」？此操作不可撤销。')) return;
+  try{
+    await ghDelete(path, sha, '删除文章 ' + path);
+    toast('已删除「' + displayName + '」', 'success');
+    await refreshArticles();
+  }catch(e){
+    toast('删除失败: ' + e.message, 'error');
+  }
+}
+
+// ── Poems ──
+async function refreshPoems(){
+  try{
+    var items = await ghListDir('poem');
+    POEMS = [];
+    for(var i=0;i<items.length;i++){
+      if(items[i].type === 'file' && items[i].name.endsWith('.html')){
+        POEMS.push({ name: items[i].name, path: items[i].path, sha: items[i].sha });
+      }
+    }
+    POEMS.sort(function(a,b){ return a.name.localeCompare(b.name,'zh'); });
+    renderPoems();
+  }catch(e){
+    toast('加载诗失败: ' + e.message, 'error');
+  }
+}
+
+function renderPoems(){
+  var q = (document.getElementById('poemSearch').value || '').toLowerCase();
+  var list = document.getElementById('poemList');
+  var filtered = POEMS.filter(function(a){ return !q || a.name.toLowerCase().includes(q); });
+  if(!filtered.length){
+    list.innerHTML = '<div class="empty">暂无诗</div>';
+    return;
+  }
+  var html = '';
+  for(var i=0;i<filtered.length;i++){
+    var a = filtered[i];
+    var displayName = a.name.replace(/\.html$/,'');
+    html += '<div class="item-row">' +
+      '<span class="name" onclick="openPoemEdit(\'' + esc(a.path) + '\',\'' + esc(a.sha) + '\')">' + escHtml(displayName) + '</span>' +
+      '<div class="actions">' +
+        '<button onclick="openPoemEdit(\'' + esc(a.path) + '\',\'' + esc(a.sha) + '\')">编辑</button>' +
+        '<button class="danger" onclick="deletePoem(\'' + esc(a.path) + '\',\'' + esc(a.sha) + '\',\'' + escHtml(displayName) + '\')">删除</button>' +
+      '</div>' +
+    '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function openPoemCreate(){
+  showModal('新建诗', '<label>文件名（不含 .html）</label><input type="text" id="modalPoemName" placeholder="例如：春望">' +
+    '<label>内容（HTML）</label><textarea id="modalPoemContent" placeholder="输入诗的内容..."></textarea>',
+    '<button onclick="closeModal()">取消</button><button class="primary" onclick="savePoemCreate()">创建</button>');
+}
+
+async function savePoemCreate(){
+  var name = document.getElementById('modalPoemName').value.trim();
+  var content = document.getElementById('modalPoemContent').value;
+  if(!name){ toast('请输入文件名', 'error'); return; }
+  var filename = name + '.html';
+  try{
+    await ghPut('poem/' + filename, content, null, '创建诗 ' + filename);
+    closeModal();
+    toast('诗已创建', 'success');
+    await refreshPoems();
+  }catch(e){
+    toast('创建失败: ' + e.message, 'error');
+  }
+}
+
+async function openPoemEdit(path, sha){
+  try{
+    var data = await ghGetContent(path);
+    var content = db64(data.content);
+    showModal('编辑: ' + path.replace('poem/','').replace('.html',''),
+      '<label>文件名</label><input type="text" id="modalPoemName" value="' + escHtml(path.replace('poem/','').replace('.html','')) + '">' +
+      '<label>内容（HTML）</label><textarea id="modalPoemContent">' + escHtml(content) + '</textarea>',
+      '<button onclick="closeModal()">取消</button><button class="primary" onclick="savePoemEdit(\'' + esc(path) + '\',\'' + esc(data.sha) + '\')">保存</button>');
+  }catch(e){
+    toast('加载失败: ' + e.message, 'error');
+  }
+}
+
+async function savePoemEdit(oldPath, oldSha){
+  var newName = document.getElementById('modalPoemName').value.trim();
+  var content = document.getElementById('modalPoemContent').value;
+  if(!newName){ toast('请输入文件名', 'error'); return; }
+  var newFilename = newName + '.html';
+  var newPath = 'poem/' + newFilename;
+  try{
+    if(oldPath !== newPath){
+      await ghPut(newPath, content, null, '创建诗 ' + newFilename + ' (重命名)');
+      await ghDelete(oldPath, oldSha, '删除旧文件 ' + oldPath);
+    }else{
+      await ghPut(oldPath, content, oldSha, '更新诗 ' + oldPath);
+    }
+    closeModal();
+    toast('诗已保存', 'success');
+    await refreshPoems();
+  }catch(e){
+    toast('保存失败: ' + e.message, 'error');
+  }
+}
+
+async function deletePoem(path, sha, displayName){
+  if(!confirm('确定删除「' + displayName + '」？此操作不可撤销。')) return;
+  try{
+    await ghDelete(path, sha, '删除诗 ' + path);
+    toast('已删除「' + displayName + '」', 'success');
+    await refreshPoems();
+  }catch(e){
+    toast('删除失败: ' + e.message, 'error');
+  }
+}
+
+// ── Series ──
+async function loadSeriesEditor(){
+  if(!CONFIG) return;
+  document.getElementById('seriesEditor').value = JSON.stringify(CONFIG.series || [], null, 2);
+}
+
+async function saveSeries(){
+  try{
+    var raw = document.getElementById('seriesEditor').value.trim();
+    var val;
+    try{ val = JSON.parse(raw); }catch(e){ toast('JSON 格式错误', 'error'); return; }
+    CONFIG.series = val;
+    var data = await ghGetContent('config.json');
+    await ghPut('config.json', JSON.stringify(CONFIG, null, 2), data.sha, '更新系列配置');
+    toast('系列已保存', 'success');
+  }catch(e){
+    toast('保存失败: ' + e.message, 'error');
+  }
+}
+
+// ── About ──
+async function loadAboutEditor(){
+  if(!CONFIG) return;
+  document.getElementById('aboutEditor').value = CONFIG.about || '';
+}
+
+async function saveAbout(){
+  try{
+    CONFIG.about = document.getElementById('aboutEditor').value;
+    var data = await ghGetContent('config.json');
+    await ghPut('config.json', JSON.stringify(CONFIG, null, 2), data.sha, '更新关于配置');
+    toast('关于已保存', 'success');
+  }catch(e){
+    toast('保存失败: ' + e.message, 'error');
+  }
+}
+
+// ── Modal ──
+function showModal(title, bodyHtml, footerHtml){
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = bodyHtml;
+  document.getElementById('modalFooter').innerHTML = footerHtml;
+  document.getElementById('modalOverlay').style.display = 'flex';
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').style.display = 'none';
+}
+
+// ── Escape helpers ──
+function esc(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Init ──
+(function init(){
+  var saved = localStorage.getItem('beitoken');
+  if(saved){
+    TOKEN = saved;
+    document.getElementById('tokenInput').value = saved;
+    doLogin();
+  }
+  document.getElementById('modalOverlay').addEventListener('click', function(e){
+    if(e.target === this) closeModal();
+  });
+})();
+</script>
+
+</body>
+</html>
