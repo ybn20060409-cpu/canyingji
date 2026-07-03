@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 .git/
 node_modules/
+
+# Local Netlify folder
+.netlify

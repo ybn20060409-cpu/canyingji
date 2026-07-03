@@ -1,15 +1,14 @@
+functionsDirectory = "C:\\Users\\ybn20\\.kun\\default_workspace\\canyingji\\netlify\\functions"
+functionsDirectoryOrigin = "config"
+redirectsOrigin = "config"
 plugins = []
 headers = []
-redirects = []
-
-[functions]
-
-[functions."*"]
 
 [build]
 publish = "C:\\Users\\ybn20\\.kun\\default_workspace\\canyingji\\public"
 publishOrigin = "config"
 commandOrigin = "ui"
+functions = "C:\\Users\\ybn20\\.kun\\default_workspace\\canyingji\\netlify\\functions"
 
 [build.environment]
 
@@ -24,3 +23,20 @@ commandOrigin = "ui"
 [build.processing.js]
 
 [build.services]
+
+[functions]
+
+[functions."*"]
+node_bundler = "esbuild"
+
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/:splat"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]
