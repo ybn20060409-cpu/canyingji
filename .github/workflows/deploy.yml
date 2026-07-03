@@ -24,6 +24,7 @@ jobs:
         uses: nwtgck/actions-netlify@v3
         with:
           publish-dir: './public'
+          functions-dir: './netlify/functions'
           production-branch: main
           github-token: ${{ secrets.GITHUB_TOKEN }}
           netlify-auth-token: ${{ secrets.NETLIFY_AUTH_TOKEN }}
